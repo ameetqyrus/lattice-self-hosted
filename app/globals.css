@@ -1807,6 +1807,61 @@ a {
   color: #83a9a2;
   line-height: 1.4;
 }
+.credential-groups {
+  display: grid;
+  gap: 14px;
+  margin-top: 26px;
+}
+.credential-group {
+  padding: 18px;
+  border: 1px solid #303949;
+  border-radius: 14px;
+  background: #111720;
+}
+.credential-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.credential-heading h2 {
+  margin: 0 0 5px;
+  font-size: 18px;
+}
+.credential-heading p {
+  max-width: 650px;
+  margin: 0;
+  color: #8e9aaf;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.credential-heading > span {
+  flex: none;
+  padding: 5px 8px;
+  border: 1px solid #38445a;
+  border-radius: 999px;
+  color: #aebfff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.credential-group .setup-grid {
+  margin-top: 2px;
+}
+.credential-group label {
+  margin-top: 16px;
+}
+.no-credentials {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid #2d4545;
+  border-radius: 12px;
+  color: #9fe2d1;
+  background: #11201f;
+}
 @media (max-width: 680px) {
   .setup-grid.two,
   .connector-picker {
@@ -1818,6 +1873,12 @@ a {
   }
   .setup-brand {
     margin-bottom: 34px;
+  }
+  .credential-heading {
+    display: grid;
+  }
+  .credential-heading > span {
+    width: fit-content;
   }
 }
 .entity-card:hover,

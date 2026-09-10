@@ -13,6 +13,7 @@ import {
   cosine,
   type SourceInput,
 } from '../lib/brain/core.ts';
+import { openWithSecret, sealWithSecret } from '../lib/integrations/crypto.ts';
 // Synthetic evidence is isolated to automated tests and is never deployed as data.
 const fixture: SourceInput = {
   provider: 'test',
@@ -41,6 +42,15 @@ const fixture: SourceInput = {
 };
 test('exact evidence and ontology contract', () =>
   assert.equal(validateInput(structuredClone(fixture)).claims?.length, 1));
+test('connector credentials are encrypted and require the same secret', async () => {
+  const sealed = await sealWithSecret('xoxb-private-value', 'workspace-secret');
+  assert.equal(sealed.includes('xoxb-private-value'), false);
+  assert.equal(
+    await openWithSecret(sealed, 'workspace-secret'),
+    'xoxb-private-value',
+  );
+  await assert.rejects(() => openWithSecret(sealed, 'wrong-secret'));
+});
 test('fabricated evidence is rejected', () => {
   const f = structuredClone(fixture);
   f.claims![0].quote = 'This invented quotation does not occur.';

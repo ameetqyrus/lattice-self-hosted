@@ -5,6 +5,10 @@ import {
   CONNECTOR_CATALOG,
   connectorCatalog,
 } from '@/lib/integrations/catalog';
+import {
+  configuredIntegrationSecrets,
+  prepareIntegrationSecrets,
+} from '@/lib/integrations/secrets';
 
 const safeWebsites = (values: unknown) =>
   Array.isArray(values)
@@ -25,7 +29,12 @@ const safeWebsites = (values: unknown) =>
 export async function GET(req: Request) {
   try {
     await authorized(req);
-    const settings = await rows('SELECT key,value FROM settings');
+    const [settings, configuredSecrets] = await Promise.all([
+      rows(
+        "SELECT key,value FROM settings WHERE key NOT LIKE 'integration_secret:%'",
+      ),
+      configuredIntegrationSecrets(),
+    ]);
     const values = Object.fromEntries(
       settings.map((item: any) => [item.key, item.value]),
     );
@@ -36,7 +45,8 @@ export async function GET(req: Request) {
         ? JSON.parse(values.selected_connectors)
         : [],
       websites: values.websites ? JSON.parse(values.websites) : [],
-      connectors: connectorCatalog(),
+      connectors: connectorCatalog(configuredSecrets),
+      configuredSecrets,
       aiReady: Boolean(runtime().OPENAI_API_KEY),
     });
   } catch (error) {
@@ -67,6 +77,10 @@ export async function POST(req: Request) {
           .slice(0, 20)
       : [];
     const websites = safeWebsites(input.websites);
+    const encryptedSecrets = await prepareIntegrationSecrets(input.secrets);
+    const configuredSecrets = new Set(await configuredIntegrationSecrets());
+    for (const secret of encryptedSecrets)
+      configuredSecrets.add(secret.key.replace('integration_secret:', ''));
     const now = new Date().toISOString();
     const statements = [
       stmt(
@@ -99,7 +113,15 @@ export async function POST(req: Request) {
         JSON.stringify({ selected, websiteCount: websites.length }),
       ),
     ];
-    for (const connector of connectorCatalog().filter((item) =>
+    for (const secret of encryptedSecrets)
+      statements.push(
+        stmt(
+          'INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+          secret.key,
+          secret.value,
+        ),
+      );
+    for (const connector of connectorCatalog(configuredSecrets).filter((item) =>
       selected.includes(item.id),
     )) {
       statements.push(

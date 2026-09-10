@@ -61,23 +61,25 @@ export const CONNECTOR_CATALOG = [
   },
 ] as const;
 
-export function connectorCatalog() {
+export function connectorCatalog(configured: Iterable<string> = []) {
+  const saved = new Set(configured);
+  const has = (key: string) => Boolean(runtime()[key]) || saved.has(key);
   return CONNECTOR_CATALOG.map((connector) => ({
     ...connector,
     ready:
       connector.env.length === 0 ||
-      connector.env.every((key) => Boolean(runtime()[key])) ||
+      connector.env.every(has) ||
       (['gmail', 'drive'].includes(connector.id) &&
         [
           'GOOGLE_CLIENT_ID',
           'GOOGLE_CLIENT_SECRET',
           'GOOGLE_REFRESH_TOKEN',
-        ].every((key) => Boolean(runtime()[key]))) ||
+        ].every(has)) ||
       (['outlook', 'teams'].includes(connector.id) &&
         [
           'MICROSOFT_CLIENT_ID',
           'MICROSOFT_CLIENT_SECRET',
           'MICROSOFT_REFRESH_TOKEN',
-        ].every((key) => Boolean(runtime()[key]))),
+        ].every(has)),
   }));
 }

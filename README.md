@@ -26,7 +26,7 @@ Lattice runs in your own Cloudflare account.
 | GitHub Actions    | Optional scheduled call to the sync endpoint              |
 | OpenAI API        | Optional extraction, embeddings, and grounded answers     |
 
-Connector credentials are deployment secrets. Lattice does not save them in D1, R2, the browser, or the repository.
+Connector credentials can be entered during onboarding or supplied as deployment secrets. Onboarding values are encrypted with APP_SESSION_SECRET before they are saved in D1 and are never returned to the browser. Deployment secrets take priority and are never saved in D1, R2, the browser, or the repository.
 
 ## Run locally
 
@@ -80,11 +80,13 @@ Open the deployed URL and complete onboarding. Put the deployment behind Cloudfl
 
 ## Configure integrations
 
-Select sources during onboarding. Lattice reports NEEDS SECRET until the corresponding deployment secret is available.
+Select sources during onboarding, then enter their connection details in the secure configuration step. Leave a previously saved field blank to keep it unchanged. You can reopen the flow later from Sources → Manage integrations.
+
+For unattended infrastructure management, the same values can be supplied as deployment secrets. Deployment values take priority over credentials entered in the UI.
 
 ### Slack
 
-Create a Slack bot, grant only the channel scopes you intend to import, and add the bot to those channels. Store its token:
+Create a Slack bot, grant only the channel scopes you intend to import, and add the bot to those channels. Enter its bot token during onboarding or store it as a deployment secret:
 
     npx wrangler secret put SLACK_BOT_TOKEN --config wrangler.jsonc
 
@@ -92,7 +94,7 @@ Typical scopes are channels:read, channels:history, groups:read, and groups:hist
 
 ### Google Drive and Gmail
 
-For a short test, set GOOGLE_DRIVE_ACCESS_TOKEN and/or GMAIL_ACCESS_TOKEN. For unattended sync, configure an OAuth client with narrow read scopes, obtain an offline refresh token, and add:
+For a short test, enter GOOGLE_DRIVE_ACCESS_TOKEN and/or GMAIL_ACCESS_TOKEN in Manage integrations. For unattended sync, configure an OAuth client with narrow read scopes, obtain an offline refresh token, and enter the three values in the UI or add them as deployment secrets:
 
     npx wrangler secret put GOOGLE_CLIENT_ID --config wrangler.jsonc
     npx wrangler secret put GOOGLE_CLIENT_SECRET --config wrangler.jsonc
@@ -102,7 +104,7 @@ The same refresh token serves both connectors only when it contains both request
 
 ### Outlook and Microsoft Teams
 
-Create a Microsoft Entra OAuth application with delegated read permissions for the selected sources and obtain an offline refresh token:
+Create a Microsoft Entra OAuth application with delegated read permissions for the selected sources and obtain an offline refresh token. Enter the values in Manage integrations or add them as deployment secrets:
 
     npx wrangler secret put MICROSOFT_CLIENT_ID --config wrangler.jsonc
     npx wrangler secret put MICROSOFT_CLIENT_SECRET --config wrangler.jsonc
@@ -171,7 +173,8 @@ Streamable HTTP MCP is available at /mcp and /api/mcp. It includes read tools fo
 - Source text is treated as untrusted data.
 - Every extracted assertion must quote an exact substring of its source.
 - Uncertain people remain source-scoped and are never merged by name alone.
-- Credentials belong in Worker or GitHub secrets. Never commit .dev.vars, .env, or wrangler.jsonc.
+- UI-entered connector credentials are AES-GCM encrypted with APP_SESSION_SECRET before D1 storage and are never returned by an API.
+- Infrastructure credentials belong in Worker or GitHub secrets. Never commit .dev.vars, .env, or wrangler.jsonc.
 
 Before exposing a fork to other users, add an identity-aware access layer and review provider permissions.
 

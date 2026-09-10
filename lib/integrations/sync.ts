@@ -1,5 +1,6 @@
-import { first, runtime, stmt } from '@/db';
+import { first, stmt } from '@/db';
 import { ingest } from '@/lib/brain/ingest';
+import { integrationSecret } from '@/lib/integrations/secrets';
 
 type Artifact = {
   provider: string;
@@ -31,17 +32,22 @@ const json = async (url: string, token: string) => {
   return response.json() as Promise<any>;
 };
 async function oauthToken(provider: 'google' | 'microsoft', fallback: string) {
-  const direct = String(runtime()[fallback] || '');
+  const direct = await integrationSecret(fallback);
   if (direct) return direct;
   const prefix = provider === 'google' ? 'GOOGLE' : 'MICROSOFT';
-  const clientId = String(runtime()[`${prefix}_CLIENT_ID`] || '');
-  const clientSecret = String(runtime()[`${prefix}_CLIENT_SECRET`] || '');
-  const refreshToken = String(runtime()[`${prefix}_REFRESH_TOKEN`] || '');
+  const [clientId, clientSecret, refreshToken] = await Promise.all([
+    integrationSecret(`${prefix}_CLIENT_ID`),
+    integrationSecret(`${prefix}_CLIENT_SECRET`),
+    integrationSecret(`${prefix}_REFRESH_TOKEN`),
+  ]);
   if (!clientId || !clientSecret || !refreshToken)
     throw new Error(
       `${fallback} or ${prefix} OAuth refresh credentials are missing`,
     );
-  const tenant = String(runtime().MICROSOFT_TENANT_ID || 'common');
+  const tenant =
+    provider === 'microsoft'
+      ? (await integrationSecret('MICROSOFT_TENANT_ID')) || 'common'
+      : 'common';
   const url =
     provider === 'google'
       ? 'https://oauth2.googleapis.com/token'
@@ -100,7 +106,7 @@ async function websites(limit: number): Promise<Artifact[]> {
 }
 
 async function slack(limit: number): Promise<Artifact[]> {
-  const token = String(runtime().SLACK_BOT_TOKEN || '');
+  const token = await integrationSecret('SLACK_BOT_TOKEN');
   if (!token) throw new Error('SLACK_BOT_TOKEN is missing');
   const list = await json(
     'https://slack.com/api/conversations.list?types=public_channel,private_channel&exclude_archived=true&limit=20',
