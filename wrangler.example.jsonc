@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lattice-self-hosted",
+  "main": "dist/server/index.js",
+  "compatibility_date": "2026-08-31",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "directory": "dist/client", "binding": "ASSETS" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lattice-db",
+      "database_id": "PASTE_D1_DATABASE_ID",
+    },
+  ],
+  "r2_buckets": [{ "binding": "SOURCES", "bucket_name": "lattice-sources" }],
+}

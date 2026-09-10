@@ -1,0 +1,17 @@
+name: Nightly source sync
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger a bounded connector sync
+        env:
+          LATTICE_URL: ${{ secrets.LATTICE_URL }}
+          LATTICE_INGEST_TOKEN: ${{ secrets.LATTICE_INGEST_TOKEN }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST "${LATTICE_URL%/}/api/integrations/sync" \
+            --header "Authorization: Bearer $LATTICE_INGEST_TOKEN"
